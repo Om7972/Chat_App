@@ -4,6 +4,10 @@
 	"type": "module",
 	"scripts": {
 		"dev": "react-router dev",
+		"build": "react-router build",
+		"start": "react-router-serve ./build/server/index.js",
+		"migrate": "node --env-file=.env scripts/migrate.js",
+		"test": "vitest run",
 		"typecheck": "react-router typegen && tsc --noEmit"
 	},
 	"dependencies": {

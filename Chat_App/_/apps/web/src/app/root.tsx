@@ -19,6 +19,7 @@ import {
   type FC,
   Component,
 } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import './global.css';
 
 import fetch from '@/__create/fetch';
@@ -390,9 +391,25 @@ export function Layout({ children }: { children: ReactNode }) {
 }
 
 export default function App() {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 10_000,
+            gcTime: 30 * 60 * 1000,
+            retry: 1,
+            refetchOnWindowFocus: false,
+          },
+        },
+      })
+  );
+
   return (
-    <SessionProvider>
-      <Outlet />
-    </SessionProvider>
+    <QueryClientProvider client={queryClient}>
+      <SessionProvider>
+        <Outlet />
+      </SessionProvider>
+    </QueryClientProvider>
   );
 }
