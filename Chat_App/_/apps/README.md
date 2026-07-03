@@ -1,27 +1,22 @@
-# CreateXYZ Messenger Web
+# CreateXYZ Apps
 
-Production-oriented chat workspace built on React Router 7, React Query, and Neon Postgres.
+This workspace contains the application surfaces for CreateXYZ Messenger.
 
-## Implemented
+## Web
 
-- Multi-room chat layout inspired by WhatsApp and Telegram
-- Persistent browser identity with editable display name
-- Conversation unread counts, read receipts, and delivery state
-- Typing indicators and presence heartbeat
-- Per-room draft persistence and searchable room list
-- Database-backed health endpoint at `/api/health`
+The web app lives in `_/apps/web` and now includes:
 
-## Environment
+- premium multi-room chat UX
+- replies, reactions, saved messages, and personal saved room
+- pinned, muted, and archived room controls
+- presence, typing, unread counts, and read receipts
+- PWA installability with offline fallback
+- production build, start, migrate, and healthcheck flows
 
-Copy `.env.example` to `.env` and set:
-
-- `DATABASE_URL`
-- `AUTH_SECRET`
-- `AUTH_URL`
-
-## Local setup
+## Run the web app
 
 ```bash
+cd _/apps/web
 npm ci
 npm run migrate
 npm run dev
@@ -30,22 +25,7 @@ npm run dev
 ## Production
 
 ```bash
-npm ci
-npm run migrate
+cd _/apps/web
 npm run build
 npm run start
 ```
-
-## Docker
-
-```bash
-docker build -t createxyz-chat-web .
-docker run --env-file .env -p 3000:3000 createxyz-chat-web
-```
-
-## Recommended next scaling steps
-
-1. Replace polling with WebSockets or Server-Sent Events.
-2. Add Redis for fan-out, rate limiting, and ephemeral presence state.
-3. Add object storage plus CDN for media delivery.
-4. Put migrations under a managed migration tool such as Prisma Migrate, Drizzle Kit, or Flyway.

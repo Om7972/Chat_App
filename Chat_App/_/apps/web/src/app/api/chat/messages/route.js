@@ -11,6 +11,7 @@ export async function POST(request) {
     const profile = normalizeProfile(payload);
     const conversationId = String(payload?.conversationId || '').trim();
     const content = String(payload?.content || '').trim();
+    const parentMessageId = payload?.parentMessageId ? String(payload.parentMessageId).trim() : null;
 
     if (!conversationId) {
       return Response.json({ error: 'conversationId is required' }, { status: 400 });
@@ -31,6 +32,7 @@ export async function POST(request) {
       conversationId,
       profileId: profile.id,
       content,
+      parentMessageId,
     });
 
     return Response.json({ message });

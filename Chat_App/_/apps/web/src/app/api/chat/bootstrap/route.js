@@ -33,7 +33,7 @@ export async function GET(request) {
     const activeConversationId =
       requestedConversationId && serializedConversations.some((item) => item.id === requestedConversationId)
         ? requestedConversationId
-        : serializedConversations[0]?.id;
+        : serializedConversations.find((item) => !item.isArchived)?.id ?? serializedConversations[0]?.id;
 
     if (!activeConversationId) {
       return Response.json({
@@ -43,6 +43,13 @@ export async function GET(request) {
         messages: [],
         participants: [],
         typing: [],
+        featureFlags: {
+          replies: true,
+          reactions: true,
+          savedMessages: true,
+          roomPreferences: true,
+          pwaReady: true,
+        },
       });
     }
 
@@ -73,6 +80,13 @@ export async function GET(request) {
         displayName: entry.display_name,
         avatarColor: entry.avatar_color,
       })),
+      featureFlags: {
+        replies: true,
+        reactions: true,
+        savedMessages: true,
+        roomPreferences: true,
+        pwaReady: true,
+      },
       refreshedAt: new Date().toISOString(),
     });
   } catch (error) {

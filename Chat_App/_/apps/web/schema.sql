@@ -64,6 +64,8 @@ CREATE TABLE IF NOT EXISTS conversation_members (
   profile_id TEXT NOT NULL REFERENCES chat_profiles(id) ON DELETE CASCADE,
   role TEXT NOT NULL DEFAULT 'member',
   is_pinned BOOLEAN NOT NULL DEFAULT FALSE,
+  is_muted BOOLEAN NOT NULL DEFAULT FALSE,
+  is_archived BOOLEAN NOT NULL DEFAULT FALSE,
   joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (conversation_id, profile_id)
@@ -73,6 +75,7 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
   sender_id TEXT NOT NULL REFERENCES chat_profiles(id) ON DELETE CASCADE,
+  parent_message_id UUID REFERENCES chat_messages(id) ON DELETE SET NULL,
   content TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'sent',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -93,6 +96,21 @@ CREATE TABLE IF NOT EXISTS typing_state (
   PRIMARY KEY (conversation_id, profile_id)
 );
 
+CREATE TABLE IF NOT EXISTS message_reactions (
+  message_id UUID NOT NULL REFERENCES chat_messages(id) ON DELETE CASCADE,
+  profile_id TEXT NOT NULL REFERENCES chat_profiles(id) ON DELETE CASCADE,
+  emoji TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (message_id, profile_id, emoji)
+);
+
+CREATE TABLE IF NOT EXISTS saved_messages (
+  message_id UUID NOT NULL REFERENCES chat_messages(id) ON DELETE CASCADE,
+  profile_id TEXT NOT NULL REFERENCES chat_profiles(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (message_id, profile_id)
+);
+
 CREATE INDEX IF NOT EXISTS idx_conversations_updated_at
   ON conversations (updated_at DESC);
 
@@ -102,11 +120,20 @@ CREATE INDEX IF NOT EXISTS idx_conversation_members_profile_id
 CREATE INDEX IF NOT EXISTS idx_chat_messages_conversation_created_at
   ON chat_messages (conversation_id, created_at DESC);
 
+CREATE INDEX IF NOT EXISTS idx_chat_messages_parent_message_id
+  ON chat_messages (parent_message_id);
+
 CREATE INDEX IF NOT EXISTS idx_message_reads_profile_id
   ON message_reads (profile_id);
 
 CREATE INDEX IF NOT EXISTS idx_typing_state_expires_at
   ON typing_state (expires_at);
+
+CREATE INDEX IF NOT EXISTS idx_message_reactions_message_id
+  ON message_reactions (message_id);
+
+CREATE INDEX IF NOT EXISTS idx_saved_messages_profile_id
+  ON saved_messages (profile_id);
 
 INSERT INTO chat_profiles (id, display_name, avatar_color)
 VALUES ('system-bot', 'CreateXYZ Bot', '#0f766e')

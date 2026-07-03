@@ -35,7 +35,11 @@ import { useSandboxStore } from '../__create/hmr-sandbox-store';
 import type { Route } from './+types/root';
 import { useDevServerHeartbeat } from '../__create/useDevServerHeartbeat';
 
-export const links = () => [];
+export const links = () => ([
+  { rel: 'manifest', href: '/manifest.webmanifest' },
+  { rel: 'icon', href: '/icon-192.svg', type: 'image/svg+xml' },
+  { rel: 'apple-touch-icon', href: '/icon-192.svg' },
+]);
 
 if (globalThis.window && globalThis.window !== undefined) {
   globalThis.window.fetch = fetch;
@@ -58,7 +62,7 @@ function SharedErrorBoundary({
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0">
             <div className="w-8 h-8 bg-[#F2F2F2] rounded-full flex items-center justify-center">
-              <span className="text-black text-[1.125rem] leading-none">⚠</span>
+              <span className="text-black text-[1.125rem] leading-none">!</span>
             </div>
           </div>
 
@@ -405,6 +409,14 @@ export default function App() {
       })
   );
 
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch((error) => {
+        console.error('Service worker registration failed', error);
+      });
+    }
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
@@ -413,3 +425,4 @@ export default function App() {
     </QueryClientProvider>
   );
 }
+
