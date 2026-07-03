@@ -84,7 +84,38 @@ export async function touchPresence(profileId) {
   `;
 }
 
+export async function ensureChatSchema() {
+  await sql`ALTER TABLE conversation_members ADD COLUMN IF NOT EXISTS is_muted BOOLEAN NOT NULL DEFAULT FALSE`;
+  await sql`ALTER TABLE conversation_members ADD COLUMN IF NOT EXISTS is_archived BOOLEAN NOT NULL DEFAULT FALSE`;
+  await sql`ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS parent_message_id UUID REFERENCES chat_messages(id) ON DELETE SET NULL`;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS message_reactions (
+      message_id UUID NOT NULL REFERENCES chat_messages(id) ON DELETE CASCADE,
+      profile_id TEXT NOT NULL REFERENCES chat_profiles(id) ON DELETE CASCADE,
+      emoji TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (message_id, profile_id, emoji)
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS saved_messages (
+      message_id UUID NOT NULL REFERENCES chat_messages(id) ON DELETE CASCADE,
+      profile_id TEXT NOT NULL REFERENCES chat_profiles(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (message_id, profile_id)
+    )
+  `;
+
+  await sql`CREATE INDEX IF NOT EXISTS idx_chat_messages_parent_message_id ON chat_messages (parent_message_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_message_reactions_message_id ON message_reactions (message_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_saved_messages_profile_id ON saved_messages (profile_id)`;
+}
+
 export async function ensureDefaultConversations(profileId) {
+  await ensureChatSchema();
+
   await sql`
     INSERT INTO chat_profiles (id, display_name, avatar_color, updated_at, last_seen_at)
     VALUES ('system-bot', 'CreateXYZ Bot', '#0f766e', NOW(), NOW())

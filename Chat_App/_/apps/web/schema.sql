@@ -71,6 +71,12 @@ CREATE TABLE IF NOT EXISTS conversation_members (
   PRIMARY KEY (conversation_id, profile_id)
 );
 
+ALTER TABLE conversation_members
+  ADD COLUMN IF NOT EXISTS is_muted BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE conversation_members
+  ADD COLUMN IF NOT EXISTS is_archived BOOLEAN NOT NULL DEFAULT FALSE;
+
 CREATE TABLE IF NOT EXISTS chat_messages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
@@ -81,6 +87,9 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   edited_at TIMESTAMPTZ
 );
+
+ALTER TABLE chat_messages
+  ADD COLUMN IF NOT EXISTS parent_message_id UUID REFERENCES chat_messages(id) ON DELETE SET NULL;
 
 CREATE TABLE IF NOT EXISTS message_reads (
   message_id UUID NOT NULL REFERENCES chat_messages(id) ON DELETE CASCADE,
