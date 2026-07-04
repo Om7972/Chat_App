@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { reactRouter } from '@react-router/dev/vite';
 import { reactRouterHonoServer } from 'react-router-hono-server/dev';
-import { defineConfig } from 'vite';
+import { defineConfig, normalizePath, type Plugin } from 'vite';
 import babel from 'vite-plugin-babel';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { addRenderIds } from './plugins/addRenderIds';
@@ -12,6 +12,52 @@ import { loadFontsFromTailwindSource } from './plugins/loadFontsFromTailwindSour
 import { nextPublicProcessEnv } from './plugins/nextPublicProcessEnv';
 import { restart } from './plugins/restart';
 import { restartEnvFileChange } from './plugins/restartEnvFileChange';
+
+function windowsModuleGraphPathFix(): Plugin {
+  return {
+    name: 'windows-module-graph-path-fix',
+    configureServer(server) {
+      if (process.platform !== 'win32') return;
+
+      const moduleGraph = server.moduleGraph as typeof server.moduleGraph & {
+        idToModuleMap?: Map<string, unknown>;
+      };
+      const getModuleById = moduleGraph.getModuleById.bind(moduleGraph);
+
+      moduleGraph.getModuleById = ((id: string) => {
+        const directMatch = getModuleById(id);
+        if (directMatch) return directMatch;
+
+        const normalizedId = normalizePath(id);
+        const candidates = new Set([
+          normalizedId,
+          normalizedId.replace(/^([A-Z]):/, (_, drive) => `${drive.toLowerCase()}:`),
+          `/@fs/${normalizedId}`,
+          `/@fs/${normalizedId.replace(/^([A-Z]):/, (_, drive) => `${drive.toLowerCase()}:`)}`,
+        ]);
+
+        for (const candidate of candidates) {
+          const match = getModuleById(candidate);
+          if (match) return match;
+        }
+
+        const normalizedLookupId = normalizedId
+          .replace(/^\/@fs\//, '')
+          .toLowerCase();
+
+        for (const [moduleId, moduleNode] of moduleGraph.idToModuleMap ?? []) {
+          const normalizedModuleId = normalizePath(moduleId)
+            .replace(/^\/@fs\//, '')
+            .toLowerCase();
+
+          if (normalizedModuleId === normalizedLookupId) {
+            return moduleNode;
+          }
+        }
+      }) as typeof moduleGraph.getModuleById;
+    },
+  };
+}
 
 export default defineConfig({
   // Keep them available via import.meta.env.NEXT_PUBLIC_*
@@ -33,6 +79,7 @@ export default defineConfig({
   },
   logLevel: 'info',
   plugins: [
+    windowsModuleGraphPathFix(),
     nextPublicProcessEnv(),
     restartEnvFileChange(),
     reactRouterHonoServer({

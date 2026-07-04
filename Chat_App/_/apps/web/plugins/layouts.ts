@@ -126,7 +126,7 @@ export function layoutWrapperPlugin(userOpts: HierarchicalLayoutOptions = {}): P
 
     layouts.forEach(({ absFile, hasExport }, i) => {
       const varName = `Layout${i}`;
-      imports.push(`import ${varName} from ${JSON.stringify(absFile)};`);
+      imports.push(`import ${varName} from ${JSON.stringify(normalizePath(absFile))};`);
       if (hasExport) {
         opening.push(`<${varName}>`);
         closing.unshift(`</${varName}>`);
@@ -134,7 +134,7 @@ export function layoutWrapperPlugin(userOpts: HierarchicalLayoutOptions = {}): P
     });
 
     // import the actual page with a flag to skip re-wrapping
-    imports.push(`import Page from ${JSON.stringify(pagePath + NO_LAYOUT_QUERY)};`);
+    imports.push(`import Page from ${JSON.stringify(normalizePath(pagePath) + NO_LAYOUT_QUERY)};`);
 
     if (routeParams.length > 0) {
       imports.push(
